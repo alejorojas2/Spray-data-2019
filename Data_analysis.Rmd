@@ -4,6 +4,8 @@ output:
   html_document: 
     keep_md: yes
     fig_caption: yes
+editor_options: 
+  chunk_output_type: inline
 ---
 
 Data of 10 cultivars of rice inoculated with _B. glumae_ or mock inoculated.  Discoloration of spikelets were recorded and presented as percentage.
@@ -25,7 +27,7 @@ rice_data
 We still have to "reshape" the table to make it in longer format coding a column for treatment (Mock vs Inoculated) and temperature profile (30-22 vs 30-28).
 
 ```{r}
-(rice_data_long <- rice_data %>% 
+rice_data_long <- rice_data %>% 
   pivot_longer(cols = c("Mock_30C-22C", "Mock_30C-28C", 
                         "Pathogen_30C-22C", "Pathogen_30C-28C"),
                names_to = "Inoculation", 
@@ -33,8 +35,9 @@ We still have to "reshape" the table to make it in longer format coding a column
   separate(col = Inoculation, 
             sep = "_",
             into = c("Inoculation", "TempProfile")) %>% 
-  unite("Inoc_Temp", Inoculation:TempProfile, remove = FALSE))
+  unite("Inoc_Temp", Inoculation:TempProfile, remove = FALSE)
 
+kableExtra::kable(rice_data_long, format = "markdown")
 ```
 
 # Data Exploration
@@ -59,10 +62,25 @@ ggplot(data = rice_data_long, aes(x = Inoc_Temp, y = DiscPerc)) +
 
 # Clustering analysis
 
-```{r}
+Since we are dealing with continous data on four different conditions with need to scale them to estimate
+their coordinates.
+```{r, message=FALSE}
 library(FactoMineR)
 library(factoextra)
 
+rice_scaled <- scale(rice_data[,3:6])
+row.names(rice_scaled) <- rice_data$Genotype
 
+kableExtra::kable(rice_scaled, format = "markdown")
+
+#Need to remove NAs
+rice_scaled_NoNAs <- na.omit(rice_scaled)
+#Calculating euclidean distances
+rice_dist <- dist(rice_scaled_NoNAs, method = "euclidean")
+
+#Hierarchical clustering
+rice_clust <- hclust(rice_dist, method = "ward.D2")
+
+plot(rice_clust)
 ```
 
