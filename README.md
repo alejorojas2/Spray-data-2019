@@ -5,4 +5,6 @@ Data analysis for _B. glumae_ inoculations on rice cultivars
 * Two temperature profiles: 30-22; 30-28
 * Mock vs Inoculated
 
-[Initial data analysis](Data_analysis.md)
+## Preliminary analysis
+
+* [Initial data analysis](Data_analysis.md)
