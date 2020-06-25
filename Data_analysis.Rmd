@@ -37,7 +37,7 @@ rice_data_long <- rice_data %>%
             into = c("Inoculation", "TempProfile")) %>% 
   unite("Inoc_Temp", Inoculation:TempProfile, remove = FALSE)
 
-kableExtra::kable(rice_data_long, format = "markdown")
+#kableExtra::kable(rice_data_long, format = "markdown")
 ```
 
 # Data Exploration
@@ -71,15 +71,16 @@ library(factoextra)
 rice_scaled <- scale(rice_data[,3:6])
 row.names(rice_scaled) <- rice_data$Genotype
 
-kableExtra::kable(rice_scaled, format = "markdown")
+#kableExtra::kable(rice_scaled, format = "markdown")
 
 #Need to remove NAs
 rice_scaled_NoNAs <- na.omit(rice_scaled)
+
 #Calculating euclidean distances
 rice_dist <- dist(rice_scaled_NoNAs, method = "euclidean")
 
 #Hierarchical clustering
-rice_clust <- hclust(rice_dist, method = "ward.D2")
+rice_clust <- hclust(rice_dist, method = "complete")
 
 plot(rice_clust)
 ```
