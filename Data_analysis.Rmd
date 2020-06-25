@@ -65,11 +65,21 @@ ggplot(data = rice_data_long, aes(x = Inoc_Temp, y = DiscPerc)) +
 Since we are dealing with continous data on four different conditions with need to scale them to estimate
 their coordinates.
 ```{r, message=FALSE}
-library(FactoMineR)
-library(factoextra)
+rice_wider <- rice_data %>% pivot_wider(names_from = Rep, names_sep = "_", 
+                          values_from = c("Mock_30C-22C", "Mock_30C-28C", 
+                          "Pathogen_30C-22C", "Pathogen_30C-28C")) %>%
+  column_to_rownames("Genotype")
 
-rice_scaled <- scale(rice_data[,3:6])
-row.names(rice_scaled) <- rice_data$Genotype
+rice_wider_NoNAs <- rice_data %>% 
+  pivot_wider(names_from = Rep, names_sep = "_", 
+                          values_from = c("Mock_30C-22C", "Mock_30C-28C", 
+                          "Pathogen_30C-22C", "Pathogen_30C-28C")) %>%
+  column_to_rownames("Genotype") %>%
+  filter(!is.na)
+  
+
+rice_scaled <- scale(rice_wider)
+
 
 #kableExtra::kable(rice_scaled, format = "markdown")
 
@@ -77,11 +87,24 @@ row.names(rice_scaled) <- rice_data$Genotype
 rice_scaled_NoNAs <- na.omit(rice_scaled)
 
 #Calculating euclidean distances
-rice_dist <- dist(rice_scaled_NoNAs, method = "euclidean")
+rice_dist <- dist(rice_scaled, method = "euclidean")
 
 #Hierarchical clustering
-rice_clust <- hclust(rice_dist, method = "complete")
+rice_clust <- hclust(rice_scaled, method = "complete")
 
 plot(rice_clust)
+```
+
+## PCA
+
+```{r}
+library(FactoMineR)
+library(factoextra)
+
+rice_PCA <- PCA(rice_wider, scale.unit = TRUE, graph = T)
+
+rice_PCA$eig
+
+fviz_pca_biplot(rice_PCA, label = )
 ```
 
