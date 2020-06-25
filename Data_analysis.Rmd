@@ -3,6 +3,7 @@ title: "Spray data - _B. glumae_"
 output:
   html_document:
     df_print: paged
+    keep_md: yes
 ---
 
 Data of 10 cultivars of rice inoculated with _B. glumae_ or mock inoculated.  Discoloration of spikelets were recorded and presented as percentage.
