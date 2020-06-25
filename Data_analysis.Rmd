@@ -1,0 +1,28 @@
+---
+title: "Spray data - _B. glumae_"
+output: html_notebook
+---
+
+Data of 10 cultivars of rice inoculated with _B. glumae_ or mock inoculated.  Discoloration of spikelets were recorded and presented as percentage.
+
+```{r}
+library(tidyverse)
+library(readxl)
+
+rice_data <- read_excel("Spray-Data-06.18.20.xlsx")
+rice_data
+```
+
+We still have to "reshape" the table to make it in longer format coding a column for treatment (Mock vs Inoculated) and temperature profile (30-22 vs 30-28).
+
+```{r}
+(rice_data_long <- rice_data %>% 
+  pivot_longer(cols = c("Mock_30C-22C", "Mock_30C-28C", 
+                        "Pathogen_30C-22C", "Pathogen_30C-28C"),
+               names_to = "Inoculation", 
+               values_to = "DiscPerc") %>%
+   separate(col = Inoculation, 
+            sep = "_",
+            into = c("Inoculation", "TempProfile")))
+```
+
