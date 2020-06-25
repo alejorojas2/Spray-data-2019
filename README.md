@@ -4,3 +4,5 @@ Data analysis for _B. glumae_ inoculations on rice cultivars
 * 10 genotypes
 * Two temperature profiles: 30-22; 30-28
 * Mock vs Inoculated
+
+[Initial data analysis](Data_analysis.md)
