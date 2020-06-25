@@ -1,15 +1,23 @@
 ---
 title: "Spray data - _B. glumae_"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 Data of 10 cultivars of rice inoculated with _B. glumae_ or mock inoculated.  Discoloration of spikelets were recorded and presented as percentage.
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 library(tidyverse)
 library(readxl)
+library(ggplot2)
+```
 
-rice_data <- read_excel("Spray-Data-06.18.20.xlsx")
+
+```{r}
+rice_data <- read_excel("Spray-Data-06.18.20.xlsx", 
+                        col_types = c("text", "numeric", "numeric",
+                                      "numeric", "numeric","numeric"))
 rice_data
 ```
 
@@ -21,8 +29,39 @@ We still have to "reshape" the table to make it in longer format coding a column
                         "Pathogen_30C-22C", "Pathogen_30C-28C"),
                names_to = "Inoculation", 
                values_to = "DiscPerc") %>%
-   separate(col = Inoculation, 
+  separate(col = Inoculation, 
             sep = "_",
-            into = c("Inoculation", "TempProfile")))
+            into = c("Inoculation", "TempProfile")) %>% 
+  unite("Inoc_Temp", Inoculation:TempProfile, remove = FALSE))
+
+```
+
+# Data Exploration
+ 
+Separating mock from pathogen inoculated:
+
+```{r, fig.height=7, warning=FALSE}
+ggplot(data = rice_data_long, aes(x = Genotype, y = DiscPerc)) +
+  geom_boxplot(aes(fill = TempProfile)) +
+  facet_grid(. ~ Inoculation) +
+  coord_flip()
+```
+
+Looking at genotype effect:
+
+```{r, fig.height=7, fig.width=8, warning=FALSE}
+ggplot(data = rice_data_long, aes(x = Inoc_Temp, y = DiscPerc)) +
+  geom_boxplot(aes(fill = TempProfile)) +
+  facet_wrap(Genotype ~ ., ncol = 5) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
+# Clustering analysis
+
+```{r}
+library(FactoMineR)
+library(factoextra)
+
+
 ```
 
