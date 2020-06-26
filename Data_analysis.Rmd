@@ -62,9 +62,79 @@ ggplot(data = rice_data_long, aes(x = Inoc_Temp, y = DiscPerc)) +
 
 # Clustering analysis
 
-Since we are dealing with continous data on four different conditions with need to scale them to estimate
-their coordinates.
+Since we are dealing with continous data on four different conditions with need to scale them to estimate their relationships.
+
+## Kmeans
+
+```{r}
+library(FactoMineR)
+library(factoextra)
+library(RColorBrewer)
+```
+
+
+```{r}
+#Need to remove NAs
+rice_data_NoNAs <- na.omit(rice_data)
+
+#Scaling data
+rice_matrix <- rice_data_NoNAs[,3:6]
+row.names(rice_matrix) <- paste0(rice_data_NoNAs$Genotype,"_",rice_data_NoNAs$Rep)
+
+#K-means
+set.seed(123)
+(km.res <- kmeans(scale(rice_matrix), 3, nstart = 10))
+
+fviz_cluster(km.res, data = rice_matrix, labelsize = 8)
+```
+
+## Hierarchical clustering
 ```{r, message=FALSE}
+#Clustering
+rice_hc <- hcut(rice_matrix, 3, stand = T)
+
+#Graphical view
+p <- fviz_dend(rice_hc, rect = T, cex=0.4)
+
+```
+
+## PCA
+
+This first one is using FactoMiner, 
+```{r}
+#Need to remove NAs
+rice_data_NoNAs <- na.omit(rice_data)
+
+#Creating Matrix for analysis
+rice_matrix <- rice_data_NoNAs[,3:6]
+row.names(rice_matrix) <- paste0(rice_data_NoNAs$Genotype,"_",rice_data_NoNAs$Rep)
+
+#PCA
+rice_PCA <- prcomp(rice_matrix, center = T, scale. = T)
+
+
+#Since we have 20 cultivars we need a palette with 20 colors
+colors_n <- length(unique(rice_data_NoNAs$Genotype))
+getPalette <- colorRampPalette(brewer.pal(9, "Dark2"))
+
+(PCA_rice <- fviz_pca_biplot(rice_PCA, col.var = "blue",
+                label = "var", repel = T,
+                habillage = rice_data_NoNAs$Genotype, addEllipses = TRUE, ellipse.level = 0.95,
+             ellipse.type ="confidence") +
+  scale_color_manual(values = getPalette(colors_n)) +
+  scale_shape_manual(values = c(rep(19, 5), rep(16,5), rep(17,5), rep(18,5))))
+
+plotly::ggplotly(PCA_rice)
+```
+
+```{r}
+
+```
+
+
+## Scratch
+
+```{r}
 rice_wider <- rice_data %>% pivot_wider(names_from = Rep, names_sep = "_", 
                           values_from = c("Mock_30C-22C", "Mock_30C-28C", 
                           "Pathogen_30C-22C", "Pathogen_30C-28C")) %>%
@@ -74,37 +144,6 @@ rice_wider_NoNAs <- rice_data %>%
   pivot_wider(names_from = Rep, names_sep = "_", 
                           values_from = c("Mock_30C-22C", "Mock_30C-28C", 
                           "Pathogen_30C-22C", "Pathogen_30C-28C")) %>%
-  column_to_rownames("Genotype") %>%
-  filter(!is.na)
-  
-
-rice_scaled <- scale(rice_wider)
-
-
-#kableExtra::kable(rice_scaled, format = "markdown")
-
-#Need to remove NAs
-rice_scaled_NoNAs <- na.omit(rice_scaled)
-
-#Calculating euclidean distances
-rice_dist <- dist(rice_scaled, method = "euclidean")
-
-#Hierarchical clustering
-rice_clust <- hclust(rice_scaled, method = "complete")
-
-plot(rice_clust)
-```
-
-## PCA
-
-```{r}
-library(FactoMineR)
-library(factoextra)
-
-rice_PCA <- PCA(rice_wider, scale.unit = TRUE, graph = T)
-
-rice_PCA$eig
-
-fviz_pca_biplot(rice_PCA, label = )
+  column_to_rownames("Genotype") 
 ```
 
