@@ -124,73 +124,65 @@ row.names(rice_matrix) <- paste0(rice_data_NoNAs$Genotype,"_",rice_data_NoNAs$Re
 ```r
 #K-means
 set.seed(123)
-(km.res <- kmeans(scale(rice_matrix), 3, nstart = 10))
-```
+km.res <- kmeans(scale(rice_matrix), 3, nstart = 10)
 
-```
-## K-means clustering with 3 clusters of sizes 73, 61, 13
-## 
-## Cluster means:
-##   Mock_30C-22C Mock_30C-28C Pathogen_30C-22C Pathogen_30C-28C
-## 1   -0.2352621   -0.3567814       -0.7556317       -0.5798089
-## 2    0.4009338   -0.1933930        0.7816750        0.4881734
-## 3   -0.5602173    2.9109243        0.5753030        0.9651899
-## 
-## Clustering vector:
-## 310111_1 310111_2 310111_3 310111_4 310111_5 310111_6 310131_1 310131_2 
-##        2        3        3        3        3        3        1        1 
-## 310131_3 310131_4 310131_5 310131_6 310219_1 310219_2 310219_3 310219_4 
-##        1        1        1        1        2        1        2        1 
-## 310219_5 310219_6 310219_7 310219_8 310301_1 310301_2 310301_3 310301_4 
-##        2        2        1        1        2        2        2        2 
-## 310301_5 310301_6 310301_7 310354_1 310354_2 310354_3 310354_4 310354_5 
-##        2        2        2        1        1        1        1        1 
-## 310354_6 310354_7 310645_1 310645_2 310645_3 310645_4 310645_5 310645_6 
-##        2        2        2        1        2        1        1        1 
-## 310645_7 310645_8 310747_1 310747_2 310747_3 310747_4 310747_5 310747_6 
-##        1        1        2        2        2        2        1        2 
-## 310747_7 310747_8 310802_1 310802_2 310802_3 310802_4 310802_5 310802_6 
-##        1        2        2        1        1        1        1        1 
-## 310802_7 310802_8 310998_1 310998_2 310998_3 310998_4 310998_5 310998_6 
-##        1        1        2        2        2        2        1        1 
-## 310998_7 310998_8 311078_1 311078_2 311078_3 311078_4 311078_5 311078_6 
-##        2        2        2        2        3        3        3        2 
-## 311151_1 311151_2 311151_3 311151_4 311151_5 311151_6 311151_7 311151_8 
-##        2        1        1        1        1        1        1        1 
-## 311206_1 311206_2 311206_3 311206_4 311206_5 311206_6 311206_7 311206_8 
-##        1        1        1        1        1        1        1        1 
-## 311383_1 311383_2 311383_3 311383_4 311383_5 311383_6 311383_7 311383_8 
-##        2        2        2        2        2        2        2        2 
-## 311385_1 311385_2 311385_3 311385_4 311385_5 311385_6 311385_7 311385_8 
-##        1        1        1        1        1        1        1        1 
-## 311600_1 311600_2 311600_3 311600_4 311600_5 311600_6 311600_7 311600_8 
-##        2        1        1        1        1        1        2        2 
-## 311642_1 311642_2 311642_3 311642_4 311642_5 311642_6 311642_7 311642_8 
-##        1        1        2        2        2        2        2        1 
-## 311677_1 311677_2 311677_3 311677_4 311677_5 311677_6 311677_7 311735_1 
-##        2        2        1        1        3        3        3        2 
-## 311735_2 311735_3 311735_4 311795_1 311795_2 311795_3 311795_4 311795_5 
-##        2        2        2        2        2        2        2        2 
-## 311795_6 311795_7 311795_8 301161_1 301161_2 301161_3 301161_4 301161_5 
-##        2        1        3        3        1        1        1        1 
-## 301161_6 301161_7 301161_8 
-##        1        1        1 
-## 
-## Within cluster sum of squares by cluster:
-## [1] 111.86268 173.12423  24.91307
-##  (between_SS / total_SS =  46.9 %)
-## 
-## Available components:
-## 
-## [1] "cluster"      "centers"      "totss"        "withinss"     "tot.withinss"
-## [6] "betweenss"    "size"         "iter"         "ifault"
-```
-
-```r
 fviz_cluster(km.res, data = rice_matrix, labelsize = 8)
 ```
 
 ![](Data_analysis_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+
+```r
+#Data Clusters
+rice_Kcluster <- cbind(rice_data_NoNAs, km.res$cluster)
+
+rice_Kcluster_data <- rice_Kcluster %>%
+  pivot_longer(cols = c("Mock_30C-22C", "Mock_30C-28C", 
+                        "Pathogen_30C-22C", "Pathogen_30C-28C"),
+               names_to = "Inoculation", 
+               values_to = "DiscPerc") %>%
+  separate(col = Inoculation, 
+            sep = "_",
+            into = c("Inoculation", "TempProfile")) %>% 
+  unite("Inoc_Temp", Inoculation:TempProfile, remove = FALSE) %>%
+  rename(cluster = `km.res$cluster`)
+
+ggplot(rice_Kcluster_data, aes(x = as.factor(cluster), y = DiscPerc)) + 
+  geom_boxplot(aes(fill = Inoc_Temp))
+```
+
+![](Data_analysis_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+
+
+```r
+(Kmeans_tolerant <- tibble(rice_Kcluster_data) %>% 
+  filter(cluster == 1) %>%
+  group_by(Genotype) %>%
+  count(Genotype))
+```
+
+```
+## # A tibble: 15 x 2
+## # Groups:   Genotype [15]
+##    Genotype     n
+##    <chr>    <int>
+##  1 301161      28
+##  2 310131      24
+##  3 310219      16
+##  4 310354      20
+##  5 310645      24
+##  6 310747       8
+##  7 310802      28
+##  8 310998       8
+##  9 311151      28
+## 10 311206      32
+## 11 311385      32
+## 12 311600      20
+## 13 311642      12
+## 14 311677       8
+## 15 311795       4
+```
+
 
 ## Hierarchical clustering
 
@@ -200,7 +192,90 @@ rice_hc <- hcut(rice_matrix, 3, stand = T)
 
 #Graphical view
 p <- fviz_dend(rice_hc, rect = T, cex=0.4)
+p
 ```
+
+![](Data_analysis_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+
+```r
+#Data Clusters
+rice_cluster <- cbind(rice_data_NoNAs, rice_hc$cluster)
+
+rice_cluster_data <- rice_cluster %>%
+  pivot_longer(cols = c("Mock_30C-22C", "Mock_30C-28C", 
+                        "Pathogen_30C-22C", "Pathogen_30C-28C"),
+               names_to = "Inoculation", 
+               values_to = "DiscPerc") %>%
+  separate(col = Inoculation, 
+            sep = "_",
+            into = c("Inoculation", "TempProfile")) %>% 
+  unite("Inoc_Temp", Inoculation:TempProfile, remove = FALSE) %>%
+  rename(cluster = `rice_hc$cluster`)
+
+ggplot(rice_cluster_data, aes(x = as.factor(cluster), y = DiscPerc)) + 
+  geom_boxplot(aes(fill = Inoc_Temp))
+```
+
+![](Data_analysis_files/figure-html/unnamed-chunk-10-2.png)<!-- -->
+
+
+```r
+(cluster_tolerant <- tibble(rice_cluster_data) %>% 
+  filter(cluster == 3) %>%
+  group_by(Genotype) %>%
+  count(Genotype))
+```
+
+```
+## # A tibble: 14 x 2
+## # Groups:   Genotype [14]
+##    Genotype     n
+##    <chr>    <int>
+##  1 301161      24
+##  2 310131      16
+##  3 310219       8
+##  4 310354      12
+##  5 310645      16
+##  6 310747       4
+##  7 310802      28
+##  8 310998       8
+##  9 311151      12
+## 10 311206      32
+## 11 311385      28
+## 12 311600      16
+## 13 311642       8
+## 14 311677       4
+```
+### Comparing hierarchical clusters and kmean clustering
+
+
+```r
+full_join(Kmeans_tolerant, cluster_tolerant, by = "Genotype") %>%
+  rename(Kmeans = n.x, H_cluster = n.y)
+```
+
+```
+## # A tibble: 15 x 3
+## # Groups:   Genotype [15]
+##    Genotype Kmeans H_cluster
+##    <chr>     <int>     <int>
+##  1 301161       28        24
+##  2 310131       24        16
+##  3 310219       16         8
+##  4 310354       20        12
+##  5 310645       24        16
+##  6 310747        8         4
+##  7 310802       28        28
+##  8 310998        8         8
+##  9 311151       28        12
+## 10 311206       32        32
+## 11 311385       32        28
+## 12 311600       20        16
+## 13 311642       12         8
+## 14 311677        8         4
+## 15 311795        4        NA
+```
+
 
 ## PCA
 
@@ -248,9 +323,84 @@ getPalette <- colorRampPalette(brewer.pal(9, "Dark2"))
 ## will replace the existing scale.
 ```
 
-![](Data_analysis_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![](Data_analysis_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
 
 
+```r
+library(viridis)
+```
+
+```
+## Loading required package: viridisLite
+```
+
+```r
+#PCA
+rice_PCA <- prcomp(rice_matrix, center = T, scale. = T)
+
+#PCA
+ggbiplot::ggbiplot(rice_PCA, obs.scale = 1, var.scale = 1) +
+  geom_text(aes(label=rice_data_NoNAs$Genotype), size = 2, nudge_y = 0.2, alpha=0.5) +
+  geom_point(aes(colour=rice_data_NoNAs$`Pathogen_30C-22C`)) +
+  scale_color_viridis(name = "Mock_30C-22C", option = "D")
+```
+
+```
+## ------------------------------------------------------------------------------
+```
+
+```
+## You have loaded plyr after dplyr - this is likely to cause problems.
+## If you need functions from both plyr and dplyr, please load plyr first, then dplyr:
+## library(plyr); library(dplyr)
+```
+
+```
+## ------------------------------------------------------------------------------
+```
+
+```
+## 
+## Attaching package: 'plyr'
+```
+
+```
+## The following objects are masked from 'package:dplyr':
+## 
+##     arrange, count, desc, failwith, id, mutate, rename, summarise,
+##     summarize
+```
+
+```
+## The following object is masked from 'package:purrr':
+## 
+##     compact
+```
+
+```
+## 
+## Attaching package: 'scales'
+```
+
+```
+## The following object is masked from 'package:viridis':
+## 
+##     viridis_pal
+```
+
+```
+## The following object is masked from 'package:purrr':
+## 
+##     discard
+```
+
+```
+## The following object is masked from 'package:readr':
+## 
+##     col_factor
+```
+
+![](Data_analysis_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
 
 ## Scratch

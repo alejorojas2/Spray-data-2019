@@ -83,10 +83,37 @@ row.names(rice_matrix) <- paste0(rice_data_NoNAs$Genotype,"_",rice_data_NoNAs$Re
 
 #K-means
 set.seed(123)
-(km.res <- kmeans(scale(rice_matrix), 3, nstart = 10))
+km.res <- kmeans(scale(rice_matrix), 3, nstart = 10)
 
 fviz_cluster(km.res, data = rice_matrix, labelsize = 8)
 ```
+
+```{r}
+#Data Clusters
+rice_Kcluster <- cbind(rice_data_NoNAs, km.res$cluster)
+
+rice_Kcluster_data <- rice_Kcluster %>%
+  pivot_longer(cols = c("Mock_30C-22C", "Mock_30C-28C", 
+                        "Pathogen_30C-22C", "Pathogen_30C-28C"),
+               names_to = "Inoculation", 
+               values_to = "DiscPerc") %>%
+  separate(col = Inoculation, 
+            sep = "_",
+            into = c("Inoculation", "TempProfile")) %>% 
+  unite("Inoc_Temp", Inoculation:TempProfile, remove = FALSE) %>%
+  rename(cluster = `km.res$cluster`)
+
+ggplot(rice_Kcluster_data, aes(x = as.factor(cluster), y = DiscPerc)) + 
+  geom_boxplot(aes(fill = Inoc_Temp))
+```
+
+```{r}
+(Kmeans_tolerant <- tibble(rice_Kcluster_data) %>% 
+  filter(cluster == 1) %>%
+  group_by(Genotype) %>%
+  count(Genotype))
+```
+
 
 ## Hierarchical clustering
 ```{r, message=FALSE}
@@ -95,8 +122,39 @@ rice_hc <- hcut(rice_matrix, 3, stand = T)
 
 #Graphical view
 p <- fviz_dend(rice_hc, rect = T, cex=0.4)
+p
 
+#Data Clusters
+rice_cluster <- cbind(rice_data_NoNAs, rice_hc$cluster)
+
+rice_cluster_data <- rice_cluster %>%
+  pivot_longer(cols = c("Mock_30C-22C", "Mock_30C-28C", 
+                        "Pathogen_30C-22C", "Pathogen_30C-28C"),
+               names_to = "Inoculation", 
+               values_to = "DiscPerc") %>%
+  separate(col = Inoculation, 
+            sep = "_",
+            into = c("Inoculation", "TempProfile")) %>% 
+  unite("Inoc_Temp", Inoculation:TempProfile, remove = FALSE) %>%
+  rename(cluster = `rice_hc$cluster`)
+
+ggplot(rice_cluster_data, aes(x = as.factor(cluster), y = DiscPerc)) + 
+  geom_boxplot(aes(fill = Inoc_Temp))
 ```
+
+```{r}
+(cluster_tolerant <- tibble(rice_cluster_data) %>% 
+  filter(cluster == 3) %>%
+  group_by(Genotype) %>%
+  count(Genotype))
+```
+### Comparing hierarchical clusters and kmean clustering
+
+```{r}
+full_join(Kmeans_tolerant, cluster_tolerant, by = "Genotype") %>%
+  rename(Kmeans = n.x, H_cluster = n.y)
+```
+
 
 ## PCA
 
@@ -127,7 +185,15 @@ getPalette <- colorRampPalette(brewer.pal(9, "Dark2"))
 ```
 
 ```{r}
+library(viridis)
+#PCA
+rice_PCA <- prcomp(rice_matrix, center = T, scale. = T)
 
+#PCA
+ggbiplot::ggbiplot(rice_PCA, obs.scale = 1, var.scale = 1) +
+  geom_text(aes(label=rice_data_NoNAs$Genotype), size = 2, nudge_y = 0.2, alpha=0.5) +
+  geom_point(aes(colour=rice_data_NoNAs$`Pathogen_30C-22C`)) +
+  scale_color_viridis(name = "Mock_30C-22C", option = "D")
 ```
 
 
