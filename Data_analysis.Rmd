@@ -285,6 +285,10 @@ rice.lm <- lm(DiscPerc ~ Inoculation*TempProfile*Genotype, data = final_data)
 car::Anova(rice.lm, type ="III")
 
 emmeans::emmip(rice.lm, Genotype ~ TempProfile | Inoculation)
+
+final_data %>%
+  group_by(Genotype) %>%
+  rstatix::anova_test(DiscPerc ~ Inoculation*TempProfile, error = rice.lm)
 ```
 
 
