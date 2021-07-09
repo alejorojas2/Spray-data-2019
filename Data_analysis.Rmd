@@ -56,6 +56,7 @@ Looking at genotype effect:
 ```{r, fig.height=7, fig.width=8, warning=FALSE}
 ggplot(data = rice_data_long, aes(x = Inoc_Temp, y = DiscPerc)) +
   geom_boxplot(aes(fill = TempProfile)) +
+  scale_fill_manual(values = alpha(c("#01665e","#8c510a"), .7)) +
   facet_wrap(Genotype ~ ., ncol = 5) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1))
 ```
@@ -227,7 +228,7 @@ ggplot(rice_cluster_data, aes(x = as.factor(cluster), y = DiscPerc)) +   geom_bo
 library(kableExtra)
 kbl(Comparison_genotypes) %>%
    kable_styling(bootstrap_options = c("striped", "hover"))
-#write_csv(Comparison_genotypes, "Comparison_genotypes.csv")
+write_csv(Comparison_genotypes, "Comparison_genotypes.csv")
 ```
 
 
@@ -272,6 +273,18 @@ biplot <- ggbiplot::ggbiplot(rice_PCA, obs.scale = 1, var.scale = 1) +
   scale_color_viridis(name = "Pathogen_30C-22C", option = "D")
 
 plotly::ggplotly(biplot)
+```
+
+```{r}
+(final_data <- rice_Kcluster_data %>%
+  filter(Genotype %in% c("311078","311677","310645","310998","311735","311383", "311795","310131","310802"))
+)
+
+rice.lm <- lm(DiscPerc ~ Inoculation*TempProfile*Genotype, data = final_data)
+
+car::Anova(rice.lm, type ="III")
+
+emmeans::emmip(rice.lm, Genotype ~ TempProfile | Inoculation)
 ```
 
 
